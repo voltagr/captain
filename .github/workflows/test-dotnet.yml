@@ -1,0 +1,57 @@
+name: Validate dotnet
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  push:
+    branches:
+      - main
+      - releases/*
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  setup-version:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system:
+          [ubuntu-latest, ubuntu-22.04, windows-latest, macos-13, macos-latest]
+        dotnet-version: ['2.1', '2.2', '3.0', '3.1', '5.0', '6.0', '7.0', '8.0']
+        exclude:
+          - dotnet-version: '2.1'
+            operating-system: ubuntu-latest
+          - dotnet-version: '2.2'
+            operating-system: ubuntu-latest
+          - dotnet-version: '3.0'
+            operating-system: ubuntu-latest
+          - dotnet-version: '3.1'
+            operating-system: ubuntu-latest
+          - dotnet-version: '5.0'
+            operating-system: ubuntu-latest
+          - dotnet-version: '2.1'
+            operating-system: macos-latest
+          - dotnet-version: '2.2'
+            operating-system: macos-latest
+          - dotnet-version: '3.0'
+            operating-system: macos-latest
+          - dotnet-version: '3.1'
+            operating-system: macos-latest
+          - dotnet-version: '5.0'
+            operating-system: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup dotnet ${{ matrix.dotnet-version }}
+        uses: ./
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+      - name: Verify installed version
+        shell: pwsh
+        run: |
+          __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.dotnet-version }}"
